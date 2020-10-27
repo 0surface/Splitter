@@ -1,13 +1,14 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0;
+pragma solidity >=0.5.15;
 
 contract Splitter {
-    uint public contractBalance;
-    mapping(address => uint) accountBalances;
+    uint256 public contractBalance;
+    mapping(address => uint256) accountBalances;
 
-    constructor () payable {}
+    constructor() public {}
 
-    function splitFunds(address _receiver1, address _receiver2) payable public {
-        
-    }
+    function splitFunds(address _receiver1, address _receiver2)
+        public
+        payable
+    {}
 }
