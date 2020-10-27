@@ -63,11 +63,11 @@ contract Splitter {
     @dev Allow fund receiver to withdraw
     */
     function withdraw() public {
-        uint256 withdrawerBalance = accountBalances[payable(msg.sender)];
+        uint256 withdrawerBalance = accountBalances[msg.sender];
         require(withdrawerBalance > 0, "No funds to withdraw");
 
         //clear account balance entry
-        accountBalances[payable(msg.sender)] = 0;
+        accountBalances[msg.sender] = 0;
         msg.sender.transfer(withdrawerBalance);
         contractBalance = contractBalance - withdrawerBalance;
         emit LogFundWithdrawn(msg.sender, withdrawerBalance);
