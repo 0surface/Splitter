@@ -15,6 +15,7 @@ contract Splitter {
         address receiver2,
         uint256 sentAmount
     );
+    event LogFundWithdrawn(address withdrawer, uint256 withdrawn);
 
     constructor() public {}
 
@@ -56,5 +57,19 @@ contract Splitter {
         }
 
         emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, _amount);
+    }
+
+    /*
+    @dev Allow fund receiver to withdraw
+    */
+    function withdraw() public {
+        uint256 withdrawerBalance = accountBalances[payable(msg.sender)];
+        require(withdrawerBalance > 0, "No funds to withdraw");
+
+        //clear account balance entry
+        accountBalances[payable(msg.sender)] = 0;
+        msg.sender.transfer(withdrawerBalance);
+        contractBalance = contractBalance - withdrawerBalance;
+        emit LogFundWithdrawn(msg.sender, withdrawerBalance);
     }
 }
