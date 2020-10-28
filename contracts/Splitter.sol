@@ -1,5 +1,7 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.5.15;
+pragma solidity >=0.5.16;
+
+import "./SafeMath.sol";
 
 /*
 @title Splitter
@@ -31,15 +33,24 @@ contract Splitter {
         uint256 splitAmount;
 
         if (msg.value % 2 == 0) {
-            splitAmount = msg.value / 2;
+            splitAmount = SafeMath.div(msg.value, 2);
         } else {
-            splitAmount = (msg.value - 1) / 2;
+            splitAmount = SafeMath.div(SafeMath.sub(msg.value, 1), 2);
             //Fund sender one wei
-            accountBalances[msg.sender] = accountBalances[msg.sender] + 1;
+            accountBalances[msg.sender] = SafeMath.add(
+                accountBalances[msg.sender],
+                1
+            );
         }
 
-        accountBalances[_receiver1] = accountBalances[_receiver1] + splitAmount;
-        accountBalances[_receiver2] = accountBalances[_receiver2] + splitAmount;
+        accountBalances[_receiver1] = SafeMath.add(
+            accountBalances[_receiver1],
+            splitAmount
+        );
+        accountBalances[_receiver2] = SafeMath.add(
+            accountBalances[_receiver2],
+            splitAmount
+        );
 
         emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, msg.value);
     }
