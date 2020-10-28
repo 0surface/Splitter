@@ -23,34 +23,25 @@ contract Splitter {
      @dev split funds and record in storage
      */
     function splitFunds(address _receiver1, address _receiver2) public payable {
-        require(msg.value >= 2, "Invalid minimum amount");
         require(
-            (_receiver1 != address(0) && _receiver2 != address(0)),
+            _receiver1 != address(0) && _receiver2 != address(0),
             "Can't split money to null address"
         );
+        require(msg.value >= 2, "Invalid minimum amount");
 
         uint256 splitAmount;
-        bool paySenderOneWei;
 
         if (msg.value % 2 == 0) {
             splitAmount = msg.value / 2;
         } else {
             splitAmount = (msg.value - 1) / 2;
             //Fund sender one wei
-            uint256 sender_before = accountBalances[msg.sender];
-            address sender = msg.sender;
-            accountBalances[sender] = sender_before + 1;
+            accountBalances[msg.sender] = accountBalances[msg.sender] + 1;
         }
 
         contractBalance += msg.value;
-
         accountBalances[_receiver1] = accountBalances[_receiver1] + splitAmount;
-
         accountBalances[_receiver2] = accountBalances[_receiver2] + splitAmount;
-
-        if (paySenderOneWei) {
-            accountBalances[msg.sender] = accountBalances[msg.sender] + 1;
-        }
 
         emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, msg.value);
     }
