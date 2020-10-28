@@ -6,7 +6,6 @@ pragma solidity >=0.5.15;
 @dev split balance of sender into two & make funds available for withdrawal
 */
 contract Splitter {
-    uint256 public contractBalance;
     mapping(address => uint256) accountBalances;
 
     event LogSplitSuccessful(
@@ -39,7 +38,6 @@ contract Splitter {
             accountBalances[msg.sender] = accountBalances[msg.sender] + 1;
         }
 
-        contractBalance += msg.value;
         accountBalances[_receiver1] = accountBalances[_receiver1] + splitAmount;
         accountBalances[_receiver2] = accountBalances[_receiver2] + splitAmount;
 
@@ -56,7 +54,7 @@ contract Splitter {
         //clear account balance entry
         accountBalances[msg.sender] = 0;
         msg.sender.transfer(withdrawerBalance);
-        contractBalance -= withdrawerBalance;
+
         emit LogFundWithdrawn(msg.sender, withdrawerBalance);
     }
 }
