@@ -24,7 +24,7 @@ contract("Splitter", (accounts) => {
 
   //TODO : afterEach, kill contract
 
-  it("split method splits funds, emits event", (done) => {
+  it("split method emits event", (done) => {
     let _sentAmount = 21;
     splitter.contract.methods
       .split(receiver_1, receiver_2)
@@ -34,11 +34,13 @@ contract("Splitter", (accounts) => {
       })
       .then((txObj) => {
         assert.notEqual(txObj.events.LogSplitSuccessful.returnValues, undefined, "LogSplitSuccessful event was not emmited");
-        let returnValues = txObj.events.LogSplitSuccessful.returnValues;
-        assert.equal(returnValues.sender, fundSender, "sender is not same");
-        assert.equal(returnValues.receiver1, receiver_1, "receiver_1 is not same");
-        assert.equal(returnValues.receiver2, receiver_2, "receiver_2 is not same");
-        assert.equal(returnValues.sentAmount, _sentAmount, "Sent Amount is not as expected");
+        return txObj.events.LogSplitSuccessful.returnValues;
+      })
+      .then((eventValues) => {
+        assert.equal(eventValues.sender, fundSender, "sender is not same");
+        assert.equal(eventValues.receiver1, receiver_1, "receiver_1 is not same");
+        assert.equal(eventValues.receiver2, receiver_2, "receiver_2 is not same");
+        assert.equal(eventValues.sentAmount, _sentAmount, "Sent Amount is not as expected");
         done();
       })
       .catch(done);
@@ -63,7 +65,7 @@ contract("Splitter", (accounts) => {
       .catch(done);
   });
 
-  it("splits even number value exactly into two", (done) => {
+  it("splits even number sent value exactly into two", (done) => {
     let _sentAmount = 20;
     let _splitAmount = _sentAmount / 2;
 
@@ -91,7 +93,7 @@ contract("Splitter", (accounts) => {
       .catch(done);
   });
 
-  it("Assigns 1 wei back to sender when sent odd value amount", (done) => {
+  it("Assigns 1 wei back to sender when sent odd value", (done) => {
     let _sentAmount = 21;
 
     splitter.contract.methods
