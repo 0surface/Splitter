@@ -39,17 +39,33 @@ contract("Splitter", (accounts) => {
         return splitter.contract.methods.withdraw().send({ from: receiver_1 });
       })
       .then((txObj) => {
-        assert.notEqual(txObj.events.LogFundWithdrawn, undefined, "LogSplitSuccessful event was not emmited");
-        return txObj.events.LogFundWithdrawn;
+        assert.notEqual(txObj.events.LogFundWithdrawn, undefined, "LogFundWithdrawn event was not emmited");
+        done();
       })
-      .then((eventLog) => {
-        assert.equal(eventLog.returnValues.withdrawer, receiver_1, "transaction receiver address is not same as event log");
-        assert.equal(
-          eventLog.returnValues.withdrawn,
-          _fundBeforeWithdrawal,
-          "withdrawn is not equal to amount before Withdrawal"
-        );
+      .catch(done);
+  });
 
+  it("should withdraw exact amount assigned in storage", (done) => {
+    let _sentAmount = 20;
+    let _fundBeforeWithdrawal = 0;
+    splitter.contract.methods
+      .split(receiver_1, receiver_2)
+      .send({
+        from: fundSender,
+        value: _sentAmount,
+      })
+      .then(() => {
+        return splitter.accountBalances.call(receiver_1);
+      })
+      .then((receiver1Balance) => {
+        _fundBeforeWithdrawal = receiver1Balance;
+        return splitter.contract.methods.withdraw().send({ from: receiver_1 });
+      })
+      .then((txObj) => {
+        return txObj.events.LogFundWithdrawn.withdrawn;
+      })
+      .then((withdrawnAmount) => {
+        assert.equal(withdrawnAmount, _fundBeforeWithdrawal, "withdrawn is not equal to amount before Withdrawal");
         done();
       })
       .catch(done);
