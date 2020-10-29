@@ -10,7 +10,7 @@ import "./SafeMath.sol";
 contract Splitter {
     using SafeMath for uint;
 
-    mapping(address => uint256) accountBalances;
+    mapping(address => uint256) public accountBalances;
 
     event LogSplitSuccessful(
         address indexed sender,
