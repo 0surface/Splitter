@@ -2,12 +2,13 @@
 pragma solidity 0.5.16;
 
 import "./SafeMath.sol";
+import "./Owned.sol";
 
 /*
 @title Splitter
 @dev split balance of sender into two & make funds available for withdrawal
 */
-contract Splitter {
+contract Splitter is Owned {
     using SafeMath for uint;
 
     mapping(address => uint256) public accountBalances;
