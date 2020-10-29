@@ -25,7 +25,7 @@ contract Splitter {
     /*
      @dev split funds and record in storage
      */
-    function splitFunds(address _receiver1, address _receiver2) public payable {
+    function split(address _receiver1, address _receiver2) public payable {
         require(
             _receiver1 != address(0) && _receiver2 != address(0),
             "Can't split money to null address"
