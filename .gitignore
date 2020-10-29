@@ -2,3 +2,4 @@
 /node_modules
 build/contracts/Migrations.json
 build/contracts/Splitter.json
+build/contracts/SafeMath.json

@@ -1,21 +1,22 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.5.15;
+pragma solidity >=0.5.16;
+
+import "./SafeMath.sol";
 
 /*
 @title Splitter
 @dev split balance of sender into two & make funds available for withdrawal
 */
 contract Splitter {
-    uint256 public contractBalance;
     mapping(address => uint256) accountBalances;
 
     event LogSplitSuccessful(
-        address sender,
-        address receiver1,
-        address receiver2,
+        address indexed sender,
+        address indexed receiver1,
+        address indexed receiver2,
         uint256 sentAmount
     );
-    event LogFundWithdrawn(address withdrawer, uint256 withdrawn);
+    event LogFundWithdrawn(address indexed withdrawer, uint256 withdrawn);
 
     constructor() public {}
 
@@ -23,40 +24,35 @@ contract Splitter {
      @dev split funds and record in storage
      */
     function splitFunds(address _receiver1, address _receiver2) public payable {
-        uint256 _amount = msg.value;
-        require(_amount >= 3, "Invalid minimum amount");
         require(
-            (_receiver1 != address(0) && _receiver2 != address(0)),
+            _receiver1 != address(0) && _receiver2 != address(0),
             "Can't split money to null address"
         );
+        require(msg.value >= 2, "Invalid minimum amount");
 
         uint256 splitAmount;
-        bool paySenderOneWei;
 
-        if (_amount % 2 == 0) {
-            splitAmount = _amount / 2;
+        if (msg.value % 2 == 0) {
+            splitAmount = SafeMath.div(msg.value, 2);
         } else {
-            splitAmount = (_amount - 1) / 2;
+            splitAmount = SafeMath.div(SafeMath.sub(msg.value, 1), 2);
             //Fund sender one wei
-            uint256 sender_before = accountBalances[msg.sender];
-            address sender = msg.sender;
-            accountBalances[sender] = sender_before + 1;
+            accountBalances[msg.sender] = SafeMath.add(
+                accountBalances[msg.sender],
+                1
+            );
         }
 
-        contractBalance += _amount;
+        accountBalances[_receiver1] = SafeMath.add(
+            accountBalances[_receiver1],
+            splitAmount
+        );
+        accountBalances[_receiver2] = SafeMath.add(
+            accountBalances[_receiver2],
+            splitAmount
+        );
 
-        uint256 balanceBefore_1 = accountBalances[_receiver1];
-        accountBalances[_receiver1] = balanceBefore_1 + splitAmount;
-
-        uint256 balanceBefore_2 = accountBalances[_receiver2];
-        accountBalances[_receiver2] = balanceBefore_2 + splitAmount;
-
-        if (paySenderOneWei) {
-            uint256 sender_before = accountBalances[msg.sender];
-            accountBalances[msg.sender] = sender_before + 1;
-        }
-
-        emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, _amount);
+        emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, msg.value);
     }
 
     /*
@@ -69,7 +65,7 @@ contract Splitter {
         //clear account balance entry
         accountBalances[msg.sender] = 0;
         msg.sender.transfer(withdrawerBalance);
-        contractBalance = contractBalance - withdrawerBalance;
+
         emit LogFundWithdrawn(msg.sender, withdrawerBalance);
     }
 }
