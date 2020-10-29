@@ -8,6 +8,8 @@ import "./SafeMath.sol";
 @dev split balance of sender into two & make funds available for withdrawal
 */
 contract Splitter {
+    using SafeMath for uint;
+
     mapping(address => uint256) accountBalances;
 
     event LogSplitSuccessful(
@@ -30,27 +32,12 @@ contract Splitter {
         );
         require(msg.value >= 2, "Invalid minimum amount");
 
-        uint256 splitAmount;
+        accountBalances[_receiver1] = accountBalances[_receiver1].add(msg.value.div(2));        
+        accountBalances[_receiver2] = accountBalances[_receiver2].add(msg.value.div(2));
 
-        if (msg.value % 2 == 0) {
-            splitAmount = SafeMath.div(msg.value, 2);
-        } else {
-            splitAmount = SafeMath.div(SafeMath.sub(msg.value, 1), 2);
-            //Fund sender one wei
-            accountBalances[msg.sender] = SafeMath.add(
-                accountBalances[msg.sender],
-                1
-            );
+        if (msg.value % 2 == 1) {
+            accountBalances[msg.sender] = accountBalances[msg.sender].add(1);
         }
-
-        accountBalances[_receiver1] = SafeMath.add(
-            accountBalances[_receiver1],
-            splitAmount
-        );
-        accountBalances[_receiver2] = SafeMath.add(
-            accountBalances[_receiver2],
-            splitAmount
-        );
 
         emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, msg.value);
     }
