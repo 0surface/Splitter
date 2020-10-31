@@ -1,14 +1,17 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.5.16;
+pragma solidity 0.5.16;
 
 import "./SafeMath.sol";
+import "./Owned.sol";
 
 /*
 @title Splitter
 @dev split balance of sender into two & make funds available for withdrawal
 */
-contract Splitter {
-    mapping(address => uint256) accountBalances;
+contract Splitter is Owned {
+    using SafeMath for uint;
+
+    mapping(address => uint256) public accountBalances;
 
     event LogSplitSuccessful(
         address indexed sender,
@@ -23,34 +26,19 @@ contract Splitter {
     /*
      @dev split funds and record in storage
      */
-    function splitFunds(address _receiver1, address _receiver2) public payable {
+    function split(address _receiver1, address _receiver2) public payable {
         require(
             _receiver1 != address(0) && _receiver2 != address(0),
             "Can't split money to null address"
         );
         require(msg.value >= 2, "Invalid minimum amount");
 
-        uint256 splitAmount;
+        accountBalances[_receiver1] = accountBalances[_receiver1].add(msg.value.div(2));        
+        accountBalances[_receiver2] = accountBalances[_receiver2].add(msg.value.div(2));
 
-        if (msg.value % 2 == 0) {
-            splitAmount = SafeMath.div(msg.value, 2);
-        } else {
-            splitAmount = SafeMath.div(SafeMath.sub(msg.value, 1), 2);
-            //Fund sender one wei
-            accountBalances[msg.sender] = SafeMath.add(
-                accountBalances[msg.sender],
-                1
-            );
+        if (msg.value % 2 == 1) {
+            accountBalances[msg.sender] = accountBalances[msg.sender].add(1);
         }
-
-        accountBalances[_receiver1] = SafeMath.add(
-            accountBalances[_receiver1],
-            splitAmount
-        );
-        accountBalances[_receiver2] = SafeMath.add(
-            accountBalances[_receiver2],
-            splitAmount
-        );
 
         emit LogSplitSuccessful(msg.sender, _receiver1, _receiver2, msg.value);
     }

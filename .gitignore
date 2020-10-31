@@ -3,3 +3,4 @@
 build/contracts/Migrations.json
 build/contracts/Splitter.json
 build/contracts/SafeMath.json
+build/contracts/Owned.json
