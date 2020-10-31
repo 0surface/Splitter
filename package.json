@@ -4,7 +4,7 @@
   "description": "An Ethereum smart Contract that splits ether sent to it into two and makes funds available for withdrawal by recipients.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "0xvoid",
   "license": "MIT",

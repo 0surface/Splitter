@@ -19,32 +19,21 @@ const Splitter = truffleContract(splitterJson);
 Splitter.setProvider(web3.currentProvider);
 
 const showBalance = async function (index) {
-  let addressElementTag = `address${index}`;
-  let balanceElementTag = `address${index}Balance`;
-
-  let addressElement = document.getElementById(addressElementTag);
-  let balanceElement = document.getElementById(balanceElementTag);
-
-  if (index > 9) {
-    console.err("Invalid accounts address");
-    addressElement.innerHTML("N/A");
-    balanceElement.innerHTML("N/A");
-    return;
+  if (index > 5) {
+    throw new Error("Invalid account index");
   }
 
-  let daddress = this.accounts[index];
-  console.log("daddress: ", daddress);
-  console.log(" address: ", daddress);
-
-  let balaceInWei = await web3.eth.getBalance(daddress);
+  let accountAddress = this.accounts[index];
+  let balaceInWei = await web3.eth.getBalance(accountAddress);
   let etherBalance = web3.utils.fromWei(balaceInWei, "ether");
 
-  addressElement.innerHTML = daddress;
+  let addressElement = document.getElementById(`address${index}`);
+  let balanceElement = document.getElementById(`address${index}Balance`);
+  addressElement.innerHTML = accountAddress;
   balanceElement.innerHTML = etherBalance;
 };
 
 window.addEventListener("load", function () {
-  //Splitter.deployed();
   web3.eth
     .getAccounts()
     .then((accounts) => {
@@ -62,5 +51,4 @@ window.addEventListener("load", function () {
       [0, 1, 2, 3, 4].map((i) => showBalance(i));
     })
     .catch(console.error);
-  //App.start();
 });
