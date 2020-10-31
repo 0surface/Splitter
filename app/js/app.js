@@ -18,14 +18,6 @@ if (typeof web3 !== "undefined") {
 const Splitter = truffleContract(splitterJson);
 Splitter.setProvider(web3.currentProvider);
 
-// const App = {
-//   start: async function () {},
-
-//   ashowBalance: async function (index) {},
-// };
-
-//window.App = App;
-
 const showBalance = async function (index) {
   let addressElementTag = `address${index}`;
   let balanceElementTag = `address${index}Balance`;
@@ -67,8 +59,7 @@ window.addEventListener("load", function () {
       return web3.eth.net.getId();
     })
     .then(() => {
-      showBalance(0);
-      console.log("in addEventListener ");
+      [0, 1, 2, 3, 4].map((i) => showBalance(i));
     })
     .catch(console.error);
   //App.start();
