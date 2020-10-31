@@ -39,36 +39,43 @@ contract("Splitter", (accounts) => {
         return splitter.contract.methods.withdraw().send({ from: receiver_1 });
       })
       .then((txObj) => {
-        assert.notEqual(txObj.events.LogFundWithdrawn, undefined, "LogFundWithdrawn event was not emmited");
+        assert.isTrue(typeof txObj.events.LogFundWithdrawn !== "undefined", "LogFundWithdrawn event was not emmited");
         done();
       })
       .catch(done);
   });
 
-  it("should withdraw exact amount assigned in storage", (done) => {
-    let _sentAmount = 20;
-    let _fundBeforeWithdrawal = 0;
-    splitter.contract.methods
-      .split(receiver_1, receiver_2)
-      .send({
-        from: fundSender,
-        value: _sentAmount,
-      })
-      .then(() => {
-        return splitter.accountBalances.call(receiver_1);
-      })
-      .then((receiver1Balance) => {
-        _fundBeforeWithdrawal = receiver1Balance;
-        return splitter.contract.methods.withdraw().send({ from: receiver_1 });
-      })
-      .then((txObj) => {
-        return txObj.events.LogFundWithdrawn.withdrawn;
-      })
-      .then((withdrawnAmount) => {
-        assert.equal(withdrawnAmount, _fundBeforeWithdrawal, "withdrawn is not equal to amount before Withdrawal");
-        done();
-      })
-      .catch(done);
+  it("withdrawer should get their allocated money", async () => {
+    let _sentAmount = web3.utils.toWei("20", "ether");
+
+    let weiBefore = await web3.eth.getBalance(receiver_1);
+
+    await splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
+
+    let withdrawTxReceipt = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
+
+    let weiAfter = await web3.eth.getBalance(receiver_1);
+
+    assert.isTrue(weiAfter > weiBefore, "withdrawer didn't get their money");
+  });
+
+  it("should withdraw exact amount assigned in storage", async () => {
+    //split
+    await splitter.contract.methods.split(receiver_1, receiver_2).send({
+      from: fundSender,
+      value: 20,
+    });
+
+    //fetch before withdrawal
+    let _fundBeforeWithdrawal = await splitter.accountBalances.call(receiver_1);
+
+    //withdraw
+    let txObj = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
+
+    //fetch logged withdrawn
+    let { withdrawn } = txObj.events.LogFundWithdrawn.returnValues;
+
+    assert.strictEqual(_fundBeforeWithdrawal.toString(10), withdrawn, "withdrawn is not equal to amount before Withdrawal");
   });
 
   it("should revert when an unassigned address attempts to withdraw", async () => {

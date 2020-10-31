@@ -2,6 +2,12 @@ const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
 
 contract("Splitter", (accounts) => {
+  before(async () => {
+    it("TestRPC must have adequate number of addresses", () => {
+      assert.isTrue(accounts.length >= 5, "Test has enough addresses");
+    });
+  });
+
   let splitter;
   let deployer = accounts[0];
   let fundSender = accounts[1];
@@ -9,20 +15,14 @@ contract("Splitter", (accounts) => {
   let receiver_2 = accounts[3];
   let nullAddress = "0x0000000000000000000000000000000000000000";
 
-  before(async () => {
-    it("TestRPC must have adequate number of addresses", () => {
-      assert.isTrue(accounts.length >= 5, "Test has enough addresses");
-    });
-
-    splitter = await artifacts.require("Splitter.sol").new();
-  });
-
   beforeEach("deploy a fresh contract", async () => {
     splitter = await Splitter.new({ from: deployer });
-    assert.equal(await web3.eth.getBalance(splitter.address), 0, "contract has no funds on deployment");
   });
 
-  //TODO : afterEach, kill contract
+  it("contract should have no funds on deployment", async () => {
+    let balance = await web3.eth.getBalance(splitter.address);
+    assert.equal(balance, 0, "contract shouldn't have funds on deployment");
+  });
 
   it("split method emits event", (done) => {
     let _sentAmount = 21;
@@ -37,10 +37,10 @@ contract("Splitter", (accounts) => {
         return txObj.events.LogSplitSuccessful.returnValues;
       })
       .then((eventValues) => {
-        assert.equal(eventValues.sender, fundSender, "sender is not same");
-        assert.equal(eventValues.receiver1, receiver_1, "receiver_1 is not same");
-        assert.equal(eventValues.receiver2, receiver_2, "receiver_2 is not same");
-        assert.equal(eventValues.sentAmount, _sentAmount, "Sent Amount is not as expected");
+        assert.strictEqual(eventValues.sender, fundSender, "sender is not same");
+        assert.strictEqual(eventValues.receiver1, receiver_1, "receiver_1 is not same");
+        assert.strictEqual(eventValues.receiver2, receiver_2, "receiver_2 is not same");
+        assert.strictEqual(eventValues.sentAmount, _sentAmount.toString(), "Sent Amount is not equal to expected");
         done();
       })
       .catch(done);
@@ -56,7 +56,7 @@ contract("Splitter", (accounts) => {
       })
       .then((txObj) => {
         assert.isTrue(txObj.status, "Transaction didn't get mined");
-        return web3.eth.getBalance(txObj.to);
+        return web3.eth.getBalance(splitter.address);
       })
       .then((splitterBalance) => {
         assert.equal(splitterBalance, _sentAmount, "contract balance doesn't have sent value");
@@ -67,7 +67,7 @@ contract("Splitter", (accounts) => {
 
   it("splits even number sent value exactly into two", (done) => {
     let _sentAmount = 20;
-    let _splitAmount = _sentAmount / 2;
+    let _splitAmount = 10;
 
     splitter.contract.methods
       .split(receiver_1, receiver_2)
