@@ -48,13 +48,13 @@ contract("Splitter", (accounts) => {
   it("withdrawer should get their allocated money", async () => {
     let _sentAmount = web3.utils.toWei("20", "ether");
 
-    let weiBefore = await web3.eth.getBalance(receiver_1);
+    let weiBefore = await web3.eth.getBalance(receiver_2);
 
     await splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
 
-    let withdrawTxReceipt = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
+    await splitter.contract.methods.withdraw().send({ from: receiver_2 });
 
-    let weiAfter = await web3.eth.getBalance(receiver_1);
+    let weiAfter = await web3.eth.getBalance(receiver_2);
 
     assert.isTrue(weiAfter > weiBefore, "withdrawer didn't get their money");
   });
