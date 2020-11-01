@@ -29,15 +29,21 @@ const split = async function () {
   let _receiver2 = $("#receiver2").val();
   let amount = $("#amount").val();
 
-  sender = accounts[1].toString();
-  _receiver1 = accounts[2].toString();
-  _receiver2 = accounts[3].toString();
+  if (!sender) {
+    sender = this.accounts[1].toString();
+  }
+  if (!_receiver1) {
+    _receiver1 = this.accounts[2].toString();
+  }
+  if (!_receiver2) {
+    _receiver2 = this.accounts[3].toString();
+  }
 
   //If sender is empty, make current address sender
   sender = sender ? sender : window.account;
 
-  if (!_receiver1 || !_receiver2 || !amount) {
-    window.alert("Can't split, fill the rquired fields");
+  if (!amount) {
+    window.alert("Can't split, fill the amount field");
     return;
   }
 
@@ -182,13 +188,13 @@ window.addEventListener("load", function () {
       if (accounts.length == 0) {
         throw new Error("No account with which to transact");
       }
-      accounts = accounts;
+      this.accounts = accounts;
       window.account = accounts[0];
-      return web3.eth.net.getId();
+      return accounts;
     })
-    .then(() => {
+    .then((list) => {
       for (i = 0; i < 10; i++) {
-        let address = accounts[i];
+        let address = list[i];
         let balance = 0;
         let owed = 0;
         let wallet = { i, address, balance, owed };
