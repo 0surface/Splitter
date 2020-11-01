@@ -24,25 +24,22 @@ const split = async function () {
   const gas = 2000000;
   let deployed;
 
-  let sender = $("#sender").val();
-  let _receiver1 = $("#receiver1").val();
-  let _receiver2 = $("#receiver2").val();
-  let amount = $("#amount").val();
+  let sender = $("input[id='sender']");
+  let _receiver1 = $("input[id='receiver1']");
+  let _receiver2 = $("input[id='receiver2']");
+  let amount = $("input[id='amount']");
 
-  if (!sender) {
-    sender = this.accounts[1].toString();
+  if (!sender.val()) {
+    sender.val(this.accounts[1].toString());
   }
   if (!_receiver1) {
-    _receiver1 = this.accounts[2].toString();
+    _receiver1.val(this.accounts[2].toString());
   }
   if (!_receiver2) {
-    _receiver2 = this.accounts[3].toString();
+    _receiver2.val(this.accounts[3].toString());
   }
 
-  //If sender is empty, make current address sender
-  sender = sender ? sender : window.account;
-
-  if (!amount) {
+  if (!amount.val()) {
     window.alert("Can't split, fill the amount field");
     return;
   }
@@ -51,27 +48,27 @@ const split = async function () {
   const { split } = deployed;
 
   let tranParamsObj = {
-    from: sender,
-    value: web3.utils.toWei(amount, "ether"),
+    from: sender.val(),
+    value: web3.utils.toWei(amount.val(), "ether"),
     gas: gas,
   };
 
   return split
-    .call(_receiver1, _receiver2, tranParamsObj)
+    .call(_receiver1.val(), _receiver2.val(), tranParamsObj)
     .then((simuilation) => {
       if (!simuilation) {
         $("#status").innerHTML = "The split transaction will fail. Please check your account balance/ split amount.";
         throw new Error("The transaction will fail anyway, not sending");
       }
       return split
-        .sendTransaction(_receiver1, _receiver2, tranParamsObj)
+        .sendTransaction(_receiver1.val(), _receiver2.val(), tranParamsObj)
         .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
     })
     .then((txObj) => {
-      $("#sender").val("");
-      $("#receiver1").val("");
-      $("#receiver1").val("");
-      $("#amount").val("");
+      sender.val("");
+      _receiver1.val("");
+      _receiver2.val("");
+      amount.val("");
       postTransaction(txObj);
     })
     .catch(console.error);
@@ -79,14 +76,14 @@ const split = async function () {
 
 const withdraw = async function () {
   const gas = 2000000;
-  let withdrawer = $("#withdrawer").val();
+  let withdrawer = $("input[id='withdrawer']");
 
-  if (!withdrawer) {
+  if (!withdrawer.val()) {
     window.alert("You need to give a withdrawer address");
     return;
   }
 
-  let balaceInWei = await web3.eth.getBalance(withdrawer);
+  let balaceInWei = await web3.eth.getBalance(withdrawer.val());
   if (balaceInWei < gas) {
     window.alert("You don't have sufficient funds in your balance");
     return;
@@ -95,7 +92,7 @@ const withdraw = async function () {
   deployed = await Splitter.deployed();
   const { withdraw } = deployed;
 
-  let transParamObj = { from: withdrawer, gas: gas };
+  let transParamObj = { from: withdrawer.val(), gas: gas };
 
   return withdraw
     .call(transParamObj)
@@ -103,13 +100,14 @@ const withdraw = async function () {
       if (!simulation) {
         $("#status").innerHTML = "The Withdraw transaction will fail. Please check your account balance/ split amount.";
         throw new Error("The transaction will fail anyway, not sending");
+      } else {
+        return withdraw
+          .sendTransaction(transParamObj)
+          .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
       }
-      return withdraw
-        .sendTransaction({ from: withdrawer, gas: gas })
-        .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
     })
     .then((txObj) => {
-      $("#withdrawn").val("");
+      withdrawer.val("");
       postTransaction(txObj);
     })
     .catch(console.error);
