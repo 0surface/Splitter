@@ -24,25 +24,34 @@ const split = async function () {
   const gas = 2000000;
   let deployed;
 
+  $("#senderHelp").html("");
+  $("#receiver1Help").html("");
+  $("#receiver2Help").html("");
+  $("#amountHelp").html("");
+
   let sender = $("input[id='sender']");
   let _receiver1 = $("input[id='receiver1']");
   let _receiver2 = $("input[id='receiver2']");
   let amount = $("input[id='amount']");
 
-  let hasValidationError = true;
+  let hasValidationError = false;
 
   if (!$("#sender").val()) {
     $("#senderHelp").html("Sender address is required").css("color", "red");
+    hasValidationError = true;
   }
   if (!$("#receiver1").val()) {
     $("#receiver1Help").html("First receiver address is required").css("color", "red");
+    hasValidationError = true;
   }
   if (!_receiver2.val()) {
     $("#receiver2Help").html("Second receiver address is required").css("color", "red");
+    hasValidationError = true;
   }
 
   if (!amount.val()) {
     $("#amountHelp").html("Second receiver address is required").css("color", "red");
+    hasValidationError = true;
   }
 
   if (hasValidationError) {
@@ -83,6 +92,7 @@ const withdraw = async function () {
   const gas = 2000000;
   let withdrawer = $("input[id='withdrawer']");
 
+  $("#withdrawerHelp").html("");
   if (!withdrawer.val()) {
     $("#withdrawerHelp").html("Second receiver address is required").css("color", "red");
     return;
