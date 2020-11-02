@@ -29,18 +29,23 @@ const split = async function () {
   let _receiver2 = $("input[id='receiver2']");
   let amount = $("input[id='amount']");
 
-  if (!sender.val()) {
-    sender.val(this.accounts[1].toString());
+  let hasValidationError = true;
+
+  if (!$("#sender").val()) {
+    $("#senderHelp").html("Sender address is required").css("color", "red");
   }
-  if (!_receiver1) {
-    _receiver1.val(this.accounts[2].toString());
+  if (!$("#receiver1").val()) {
+    $("#receiver1Help").html("First receiver address is required").css("color", "red");
   }
-  if (!_receiver2) {
-    _receiver2.val(this.accounts[3].toString());
+  if (!_receiver2.val()) {
+    $("#receiver2Help").html("Second receiver address is required").css("color", "red");
   }
 
   if (!amount.val()) {
-    window.alert("Can't split, fill the amount field");
+    $("#amountHelp").html("Second receiver address is required").css("color", "red");
+  }
+
+  if (hasValidationError) {
     return;
   }
 
@@ -56,10 +61,11 @@ const split = async function () {
   try {
     await split.call(_receiver1.val(), _receiver2.val(), tranParamsObj);
   } catch (err) {
-    $("#splitHeader").css("background-color", "#FF5733");
-    $("#status")
-      .html("The split transaction will fail. Please check your account balance/ split amount.")
-      .css("background-color", "#FF5733");
+    console.log(err);
+    $("#status").html("The split transaction will fail. Please check your account balance/ split amount.");
+    flashRedError("status", 3);
+    flashRedError("splitHeader", 3);
+    throw new Error("The split transaction will fail anyway, not sending");
   }
 
   let txObj = await split
@@ -78,7 +84,7 @@ const withdraw = async function () {
   let withdrawer = $("input[id='withdrawer']");
 
   if (!withdrawer.val()) {
-    window.alert("You need to give a withdrawer address");
+    $("#withdrawerHelp").html("Second receiver address is required").css("color", "red");
     return;
   }
 
@@ -96,11 +102,10 @@ const withdraw = async function () {
     await withdraw.call(transParamObj);
     okToSend = true;
   } catch (err) {
-    $("#withdrawHeader").css("background-color", "#FF5733");
-    $("#status")
-      .html("The Withdraw transaction will fail. Please check your account balance/ split amount.")
-      .css("background-color", "#FF5733");
-    throw new Error("The transaction will fail anyway, not sending");
+    $("#status").html("The Withdraw transaction will fail. Please check your account balance/ split amount.");
+    flashRedError("status", 3);
+    flashRedError("withdrawHeader", 3);
+    throw new Error("The withdraw transaction will fail anyway, not sending");
   }
 
   let txReceipt = await withdraw
@@ -124,26 +129,6 @@ const showBalance = async function (wallet) {
       document.getElementById(`address${wallet.i}Balance`).innerHTML = web3.utils.fromWei(balaceInWei, "ether");
     })
     .catch(console.error);
-};
-
-const updateUI = function (txObj) {
-  const receipt = txObj.receipt;
-  console.log("got receipt", receipt);
-  if (!receipt.status) {
-    console.error("Wrong status");
-    console.error(receipt);
-    $("#status").html("There was an error in the tx execution, status not 1");
-  } else if (receipt.logs.length == 0) {
-    console.error("Empty logs");
-    console.error(receipt);
-    $("#status").html("There was an error in the tx execution, missing expected event");
-  } else {
-    console.log(receipt.logs[0]);
-    $("#status").html("Transfer executed");
-  }
-  showContractBalance();
-  wallets.slice(0, 5).map((w) => showBalance(w));
-  wallets.slice(0, 5).map((w) => showDappBalance(w));
 };
 
 const showDappBalance = async function (wallet) {
@@ -175,6 +160,39 @@ const showContractBalance = async function () {
       $("#contractBalance").html(web3.utils.fromWei(balance, "ether").toString(10));
     })
     .catch(console.error);
+};
+
+const updateUI = function (txObj) {
+  const receipt = txObj.receipt;
+  console.log("got receipt", receipt);
+  if (!receipt.status) {
+    console.error("Wrong status");
+    console.error(receipt);
+    $("#status").html("There was an error in the tx execution, status not 1");
+  } else if (receipt.logs.length == 0) {
+    console.error("Empty logs");
+    console.error(receipt);
+    $("#status").html("There was an error in the tx execution, missing expected event");
+  } else {
+    console.log(receipt.logs[0]);
+    $("#status").html("Transfer executed");
+  }
+  showContractBalance();
+  wallets.slice(0, 5).map((w) => showBalance(w));
+  wallets.slice(0, 5).map((w) => showDappBalance(w));
+};
+
+const flashRedError = function (elementIdTag, seconds) {
+  let $el = $(`#${elementIdTag}`);
+  let x = seconds * 1000;
+  let originalColor = $el.css("background");
+
+  console.log("$el", $el);
+
+  $el.css("background", "#FF5733");
+  setTimeout(function () {
+    $el.css("background", originalColor);
+  }, x);
 };
 
 window.addEventListener("load", function () {
