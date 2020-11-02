@@ -53,25 +53,24 @@ const split = async function () {
     gas: gas,
   };
 
-  return split
-    .call(_receiver1.val(), _receiver2.val(), tranParamsObj)
-    .then((simuilation) => {
-      if (!simuilation) {
-        $("#status").innerHTML = "The split transaction will fail. Please check your account balance/ split amount.";
-        throw new Error("The transaction will fail anyway, not sending");
-      }
-      return split
-        .sendTransaction(_receiver1.val(), _receiver2.val(), tranParamsObj)
-        .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
-    })
-    .then((txObj) => {
-      sender.val("");
-      _receiver1.val("");
-      _receiver2.val("");
-      amount.val("");
-      postTransaction(txObj);
-    })
-    .catch(console.error);
+  try {
+    await split.call(_receiver1.val(), _receiver2.val(), tranParamsObj);
+  } catch (err) {
+    $("#splitHeader").css("background-color", "#FF5733");
+    $("#status")
+      .html("The split transaction will fail. Please check your account balance/ split amount.")
+      .css("background-color", "#FF5733");
+  }
+
+  let txObj = await split
+    .sendTransaction(_receiver1.val(), _receiver2.val(), tranParamsObj)
+    .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
+
+  sender.val("");
+  _receiver1.val("");
+  _receiver2.val("");
+  amount.val("");
+  updateUI(txObj);
 };
 
 const withdraw = async function () {
@@ -91,26 +90,25 @@ const withdraw = async function () {
 
   deployed = await Splitter.deployed();
   const { withdraw } = deployed;
-
   let transParamObj = { from: withdrawer.val(), gas: gas };
 
-  return withdraw
-    .call(transParamObj)
-    .then((simulation) => {
-      if (!simulation) {
-        $("#status").innerHTML = "The Withdraw transaction will fail. Please check your account balance/ split amount.";
-        throw new Error("The transaction will fail anyway, not sending");
-      } else {
-        return withdraw
-          .sendTransaction(transParamObj)
-          .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
-      }
-    })
-    .then((txObj) => {
-      withdrawer.val("");
-      postTransaction(txObj);
-    })
-    .catch(console.error);
+  try {
+    await withdraw.call(transParamObj);
+    okToSend = true;
+  } catch (err) {
+    $("#withdrawHeader").css("background-color", "#FF5733");
+    $("#status")
+      .html("The Withdraw transaction will fail. Please check your account balance/ split amount.")
+      .css("background-color", "#FF5733");
+    throw new Error("The transaction will fail anyway, not sending");
+  }
+
+  let txReceipt = await withdraw
+    .sendTransaction(transParamObj)
+    .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
+
+  withdrawer.val("");
+  updateUI(txReceipt);
 };
 
 const showBalance = async function (wallet) {
@@ -128,7 +126,7 @@ const showBalance = async function (wallet) {
     .catch(console.error);
 };
 
-const postTransaction = function (txObj) {
+const updateUI = function (txObj) {
   const receipt = txObj.receipt;
   console.log("got receipt", receipt);
   if (!receipt.status) {
