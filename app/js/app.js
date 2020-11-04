@@ -70,7 +70,6 @@ const split = async function () {
   try {
     await split.call(_receiver1.val(), _receiver2.val(), tranParamsObj);
   } catch (err) {
-    console.log(err);
     $("#status").html("The split transaction will fail. Please check your account balance/ split amount.");
     flashRedError("status", 3);
     flashRedError("splitHeader", 3);
@@ -108,22 +107,21 @@ const withdraw = async function () {
   const { withdraw } = deployed;
   let transParamObj = { from: withdrawer.val(), gas: gas };
 
-  try {
-    await withdraw.call(transParamObj);
-    okToSend = true;
-  } catch (err) {
+  const okToSend = await withdraw.call(transParamObj).catch((err) => {
     $("#status").html("The Withdraw transaction will fail. Please check your account balance/ split amount.");
     flashRedError("status", 3);
     flashRedError("withdrawHeader", 3);
-    throw new Error("The withdraw transaction will fail anyway, not sending");
+    return;
+  });
+
+  if (okToSend) {
+    let txReceipt = await withdraw
+      .sendTransaction(transParamObj)
+      .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
+
+    updateUI(txReceipt);
   }
-
-  let txReceipt = await withdraw
-    .sendTransaction(transParamObj)
-    .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
-
   withdrawer.val("");
-  updateUI(txReceipt);
 };
 
 const showBalance = async function (wallet) {
@@ -166,7 +164,6 @@ const showContractBalance = async function () {
       return web3.eth.getBalance(cc);
     })
     .then((balance) => {
-      console.log("balance : ", balance);
       $("#contractBalance").html(web3.utils.fromWei(balance, "ether").toString(10));
     })
     .catch(console.error);
@@ -174,7 +171,6 @@ const showContractBalance = async function () {
 
 const updateUI = function (txObj) {
   const receipt = txObj.receipt;
-  console.log("got receipt", receipt);
   if (!receipt.status) {
     console.error("Wrong status");
     console.error(receipt);
@@ -184,7 +180,6 @@ const updateUI = function (txObj) {
     console.error(receipt);
     $("#status").html("There was an error in the tx execution, missing expected event");
   } else {
-    console.log(receipt.logs[0]);
     $("#status").html("Transfer executed");
   }
   showContractBalance();
@@ -196,8 +191,6 @@ const flashRedError = function (elementIdTag, seconds) {
   let $el = $(`#${elementIdTag}`);
   let x = seconds * 1000;
   let originalColor = $el.css("background");
-
-  console.log("$el", $el);
 
   $el.css("background", "#FF5733");
   setTimeout(function () {
