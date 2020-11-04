@@ -1,4 +1,5 @@
 const Splitter = artifacts.require("Splitter");
+const BigNumber = require("bignumber.js");
 const truffleAssert = require("truffle-assertions");
 
 contract("Splitter", (accounts) => {
@@ -46,17 +47,36 @@ contract("Splitter", (accounts) => {
   });
 
   it("withdrawer should get their allocated money", async () => {
-    let _sentAmount = web3.utils.toWei("20", "ether");
+    const _sentAmount = web3.utils.toWei("2", "ether");
+    const _owedAmount = web3.utils.toWei("1", "ether");
 
-    let weiBefore = await web3.eth.getBalance(receiver_2);
+    const weiBeforeWithdraw = await web3.eth.getBalance(receiver_2);
 
     await splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
 
-    await splitter.contract.methods.withdraw().send({ from: receiver_2 });
+    const _gasPrice = await web3.eth.getGasPrice();
 
-    let weiAfter = await web3.eth.getBalance(receiver_2);
+    const withdrawTxObj = await splitter.contract.methods.withdraw().send({ from: receiver_2 });
 
-    assert.isTrue(weiAfter > weiBefore, "withdrawer didn't get their money");
+    const _gasAmount = withdrawTxObj.gasUsed;
+
+    const weiAfterWithdraw = await web3.eth.getBalance(receiver_2);
+
+    const bn_gasPrice = new BigNumber(_gasPrice);
+    const bn_gasAmount = new BigNumber(_gasAmount);
+    const gasCost = bn_gasPrice.times(bn_gasAmount);
+
+    const owed = new BigNumber(_owedAmount);
+    const beforeBalance = new BigNumber(weiBeforeWithdraw);
+    const afterBalance = new BigNumber(weiAfterWithdraw);
+
+    const expectedAfterBalance = beforeBalance.plus(owed).minus(gasCost);
+
+    //Use BigNumber methods
+    assert.isTrue(afterBalance.isEqualTo(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
+
+    //Direct comparision
+    assert.strictEqual(expectedAfterBalance.toString(10), afterBalance.toString(10), "withdrawer didn't get exact owed amount");
   });
 
   it("should withdraw exact amount assigned in storage", async () => {

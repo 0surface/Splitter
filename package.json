@@ -9,6 +9,7 @@
   "author": "0xvoid",
   "license": "MIT",
   "devDependencies": {
+    "bignumber.js": "^9.0.1",
     "create-html": "^4.1.0",
     "file-loader": "^6.2.0",
     "truffle": "^5.1.50",
