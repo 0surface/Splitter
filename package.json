@@ -1,0 +1,25 @@
+{
+  "name": "splitter",
+  "version": "1.0.0",
+  "description": "An Ethereum smart Contract that splits ether sent to it into two and makes funds available for withdrawal by recipients.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "0xvoid",
+  "license": "MIT",
+  "devDependencies": {
+    "create-html": "^4.1.0",
+    "file-loader": "^6.2.0",
+    "truffle": "^5.1.50",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "bootstrap": "^4.5.3",
+    "jquery": "^3.5.1",
+    "truffle-contract": "^4.0.31",
+    "web3": "^1.3.0"
+  }
+}

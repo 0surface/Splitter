@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<title>Splitter</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" >
+</head>
+  <body>
+    <h1>Splitter - Dapp</h1>
+    <h4><br/>Contract Balance : <span style="font-weight: bold;" id="contractBalance"></span> ETH</h4>
+    <h6 id="status"></h6>
+    <hr/>
+    <div class="container">
+      <div class="row">
+        <div class="col">          
+          <div class="row-sm-12"> 
+            <div class="card-deck">
+              <div class="card mb-4 box-shadow">
+                <div class="card-header" id="splitHeader">
+                  <h4 class="my-0 font-weight-normal">Split</h4>
+                </div>
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="sender">From</label>
+                    <input type="text" class="form-control" id="sender" aria-describedby="senderHelp" aria-placeholder="Sender">
+                    <small id="senderHelp" class="form-text text-danger"></small>
+                  </div>
+                  <div class="form-group">
+                    <label for="receiver1">To First</label>
+                    <input type="text" class="form-control" id="receiver1" aria-describedby="receiver1Help" aria-placeholder="First receiver" >
+                    <small id="receiver1Help" class="form-text text-danger"></small>
+                  </div>
+                  <div class="form-group">
+                    <label for="receiver2">To Second</label>
+                    <input type="text" class="form-control" id="receiver2" aria-describedby="receiver2Help" aria-placeholder="Second receiver">
+                    <small id="receiver2Help" class="form-text text-danger"></small>
+                  </div>                    
+                  <div class="form-group">
+                    <label for="amount">Amount</label>
+                    <input type="text" class="form-control" id="amount" aria-describedby="amountHelp" aria-placeholder="42.10">
+                    <small id="amountHelp" class="form-text text-danger"></small>
+                  </div> 
+                  <button class="btn btn-lg btn-block btn-success" id="btnSplit">Split</a>
+                </div>
+              </div>
+              
+            </div> 
+          </div>
+          
+        <div class="row-sm-12">
+          <div class="card-deck">
+            <div class="card mb-4 box-shadow">
+              <div class="card-header" id="withdrawHeader">
+                <h4 class="my-0 font-weight-normal">Withdraw</h4>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="withdrawer">From</label>
+                  <input type="text" class="form-control" id="withdrawer" aria-describedby="withdrawerHelp" aria-placeholder="Withdrawer">
+                  <small id="withdrawerHelp" class="form-text text-danger"></small>
+                </div>           
+                <button class="btn btn-lg btn-block btn-info" id="btnWithdraw">Withdraw</a>  
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+        <div class="col">
+          <table class="table table-striped table-sm">
+            <thead>          
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Address</th>
+                <th scope="col">Wallet</th>
+                <th scope="col">Dapp</th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr>
+                <th scope="row">1</th>
+                <td><div id="address0"style="font-size:small;"></div></td> 
+                <td><div id="address0Balance"></div></td> 
+                <td><div id="address0DappBalance"></div></td> 
+              </tr>
+              <tr>
+                <th scope="row">2</th>
+                <td><div id="address1" style="font-size:small;"></div></td> 
+                <td><div id="address1Balance"></div></td> 
+                <td><div id="address1DappBalance"></div></td> 
+              </tr>
+              <tr>
+                <th scope="row">3</th>
+                <td><div id="address2" style="font-size:small;"></div></td> 
+                <td><div id="address2Balance"></div></td> 
+                <td><div id="address2DappBalance"></div></td> 
+              </tr>
+              <tr>
+                <th scope="row">4</th>
+                <td><div id="address3" style="font-size:small;"></div></td>
+                <td><div id="address3Balance"></div></td> 
+                <td><div id="address3DappBalance"></div></td> 
+              </tr>
+              <tr>
+                <th scope="row">5</th>
+                <td><div id="address4" style="font-size:small;"></div></td>
+                <td><div id="address4Balance"></div></td> 
+                <td><div id="address4DappBalance"></div></td> 
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="dropdown-divider"></div>
+      <div class="row">
+        <div class="col">
+          <h6>Transactions logs</h6>
+          <div>            
+        </div>
+        </div>       
+      </div>
+    </div>
+    <footer>
+      <p style="font-size:small;"> Dapp @Info</p>
+    </footer>
+    <script src="js/app.js"></script>
+  </body>
+</html>

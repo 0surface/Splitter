@@ -4,3 +4,5 @@ build/contracts/Migrations.json
 build/contracts/Splitter.json
 build/contracts/SafeMath.json
 build/contracts/Owned.json
+build/app/index.html
+build/app/js/app.js
