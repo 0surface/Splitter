@@ -9,23 +9,23 @@ contract("Splitter", (accounts) => {
   });
 
   let splitter;
-  let deployer = accounts[0];
-  let fundSender = accounts[1];
-  let receiver_1 = accounts[2];
-  let receiver_2 = accounts[3];
-  let nullAddress = "0x0000000000000000000000000000000000000000";
+  const deployer = accounts[0];
+  const fundSender = accounts[1];
+  const receiver_1 = accounts[2];
+  const receiver_2 = accounts[3];
+  const nullAddress = "0x0000000000000000000000000000000000000000";
 
   beforeEach("deploy a fresh contract", async () => {
     splitter = await Splitter.new({ from: deployer });
   });
 
   it("contract should have no funds on deployment", async () => {
-    let balance = await web3.eth.getBalance(splitter.address);
-    assert.equal(balance, 0, "contract shouldn't have funds on deployment");
+    const balance = await web3.eth.getBalance(splitter.address);
+    assert.strictEqual(parseInt(balance), 0, "contract shouldn't have funds on deployment");
   });
 
   it("split method emits event", (done) => {
-    let _sentAmount = 21;
+    const _sentAmount = 21;
     splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
@@ -33,7 +33,10 @@ contract("Splitter", (accounts) => {
         value: _sentAmount,
       })
       .then((txObj) => {
-        assert.notEqual(txObj.events.LogSplitSuccessful.returnValues, undefined, "LogSplitSuccessful event was not emmited");
+        assert.isTrue(
+          typeof txObj.events.LogSplitSuccessful.returnValues !== "undefined",
+          "LogSplitSuccessful event was not emmited"
+        );
         return txObj.events.LogSplitSuccessful.returnValues;
       })
       .then((eventValues) => {
@@ -47,7 +50,7 @@ contract("Splitter", (accounts) => {
   });
 
   it("contract address has the sent amount value", (done) => {
-    let _sentAmount = 20;
+    const _sentAmount = 20;
     splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
@@ -66,8 +69,8 @@ contract("Splitter", (accounts) => {
   });
 
   it("splits even number sent value exactly into two", (done) => {
-    let _sentAmount = 20;
-    let _splitAmount = 10;
+    const _sentAmount = 20;
+    const _splitAmount = 10;
 
     splitter.contract.methods
       .split(receiver_1, receiver_2)
@@ -94,7 +97,7 @@ contract("Splitter", (accounts) => {
   });
 
   it("Assigns 1 wei back to sender when sent odd value", (done) => {
-    let _sentAmount = 21;
+    const _sentAmount = 21;
 
     splitter.contract.methods
       .split(receiver_1, receiver_2)
@@ -106,7 +109,7 @@ contract("Splitter", (accounts) => {
         return splitter.accountBalances.call(fundSender);
       })
       .then((fundSenderBalance) => {
-        let assignedValue = fundSenderBalance.toString(10);
+        const assignedValue = fundSenderBalance.toString(10);
         assert.equal(assignedValue, 1, "fundSender not assigned 1 wei");
         done();
       })
