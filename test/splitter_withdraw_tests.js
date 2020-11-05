@@ -23,10 +23,10 @@ contract("Splitter", (accounts) => {
     assert.equal(await web3.eth.getBalance(splitter.address), 0, "contract has no funds on deployment");
   });
 
-  it("should emit event on successful withdrawal", (done) => {
+  it("should emit event on successful withdrawal", () => {
     let _fundBeforeWithdrawal = 0;
 
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -41,9 +41,7 @@ contract("Splitter", (accounts) => {
       })
       .then((txObj) => {
         assert.isTrue(typeof txObj.events.LogFundWithdrawn !== "undefined", "LogFundWithdrawn event was not emmited");
-        done();
-      })
-      .catch(done);
+      });
   });
 
   it("withdrawer should get their allocated money", async () => {
@@ -107,8 +105,8 @@ contract("Splitter", (accounts) => {
     await truffleAssert.reverts(splitter.contract.methods.withdraw().send({ from: randomAddress }), "No funds to withdraw");
   });
 
-  it("should reset receiver's assigned funds back to zero on withdrawal", (done) => {
-    splitter.contract.methods
+  it("should reset receiver's assigned funds back to zero on withdrawal", () => {
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -120,8 +118,6 @@ contract("Splitter", (accounts) => {
       })
       .then((receiver1Balance) => {
         assert.equal(receiver1Balance.toString(10), 0, "receiver balance record is NOT set to zero after withdrwal");
-        done();
-      })
-      .catch(done);
+      });
   });
 });

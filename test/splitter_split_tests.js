@@ -49,9 +49,9 @@ contract("Splitter", (accounts) => {
       .catch(done);
   });
 
-  it("contract address has the sent amount value", (done) => {
+  it("contract address has the sent amount value", () => {
     const _sentAmount = 20;
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -63,16 +63,14 @@ contract("Splitter", (accounts) => {
       })
       .then((splitterBalance) => {
         assert.equal(splitterBalance, _sentAmount, "contract balance doesn't have sent value");
-        done();
-      })
-      .catch(done);
+      });
   });
 
-  it("splits even number sent value exactly into two", (done) => {
+  it("splits even number sent value exactly into two", () => {
     const _sentAmount = 20;
     const _splitAmount = 10;
 
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -91,15 +89,13 @@ contract("Splitter", (accounts) => {
       })
       .then((fundSenderBalance) => {
         assert.equal(fundSenderBalance.toString(10), 0, "fund sender is assigned a value");
-        done();
-      })
-      .catch(done);
+      });
   });
 
-  it("Assigns 1 wei back to sender when sent odd value", (done) => {
+  it("Assigns 1 wei back to sender when sent odd value", () => {
     const _sentAmount = 21;
 
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -111,9 +107,7 @@ contract("Splitter", (accounts) => {
       .then((fundSenderBalance) => {
         const assignedValue = fundSenderBalance.toString(10);
         assert.equal(assignedValue, 1, "fundSender not assigned 1 wei");
-        done();
-      })
-      .catch(done);
+      });
   });
 
   it("reverts when a receiver null address", async () => {
