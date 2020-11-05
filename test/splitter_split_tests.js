@@ -5,7 +5,7 @@ const { BN } = web3.utils.BN;
 
 // Enable and inject BN dependency
 chai.use(require("chai-bn")(BN));
-const { assert } = chai;
+const { assert, expect } = chai;
 
 contract("Splitter", (accounts) => {
   before(async () => {
@@ -152,7 +152,7 @@ contract("Splitter", (accounts) => {
       .then((receiver1Balance) => {
         const expected = new BN(splitCount * _splitAmount);
         const actual = new BN(receiver1Balance);
-        chai.expect(actual).to.be.a.bignumber.that.equals(expected);
+        expect(actual).to.be.a.bignumber.that.equals(expected);
       });
   });
 

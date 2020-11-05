@@ -5,7 +5,7 @@ const { BN } = web3.utils.BN;
 
 // Enable and inject BN dependency
 chai.use(require("chai-bn")(BN));
-const { assert } = chai;
+const { assert, expect } = chai;
 
 contract("Splitter", (accounts) => {
   let splitter;
@@ -75,7 +75,7 @@ contract("Splitter", (accounts) => {
 
     const expectedAfterBalance = beforeBalance.add(owed).sub(gasCost);
 
-    chai.expect(afterBalance).to.be.a.bignumber.that.equals(expectedAfterBalance);
+    expect(afterBalance).to.be.a.bignumber.that.equals(expectedAfterBalance);
   });
 
   it("should withdraw exact amount assigned in storage", async () => {
