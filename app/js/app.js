@@ -13,7 +13,7 @@ if (typeof web3 !== "undefined") {
   window.web3 = new Web3(web3.currentProvider);
 } else {
   // Your preferred fallback.
-  let localProvider = new Web3.providers.HttpProvider("http://localhost:8545");
+  const localProvider = new Web3.providers.HttpProvider("http://localhost:8545");
   window.web3 = new Web3(localProvider);
 }
 
@@ -29,10 +29,10 @@ const split = async function () {
   $("#receiver2Help").html("");
   $("#amountHelp").html("");
 
-  let sender = $("input[id='sender']");
-  let _receiver1 = $("input[id='receiver1']");
-  let _receiver2 = $("input[id='receiver2']");
-  let amount = $("input[id='amount']");
+  const sender = $("input[id='sender']");
+  const _receiver1 = $("input[id='receiver1']");
+  const _receiver2 = $("input[id='receiver2']");
+  const amount = $("input[id='amount']");
 
   let hasValidationError = false;
 
@@ -70,7 +70,6 @@ const split = async function () {
   try {
     await split.call(_receiver1.val(), _receiver2.val(), tranParamsObj);
   } catch (err) {
-    console.log(err);
     $("#status").html("The split transaction will fail. Please check your account balance/ split amount.");
     flashRedError("status", 3);
     flashRedError("splitHeader", 3);
@@ -90,40 +89,40 @@ const split = async function () {
 
 const withdraw = async function () {
   const gas = 2000000;
-  let withdrawer = $("input[id='withdrawer']");
-
+  const withdrawer = $("input[id='withdrawer']");
   $("#withdrawerHelp").html("");
+
   if (!withdrawer.val()) {
     $("#withdrawerHelp").html("Second receiver address is required").css("color", "red");
     return;
   }
 
-  let balaceInWei = await web3.eth.getBalance(withdrawer.val());
-  if (balaceInWei < gas) {
+  let balanceInWei = await web3.eth.getBalance(withdrawer.val());
+  if (balanceInWei < gas) {
     window.alert("You don't have sufficient funds in your balance");
     return;
   }
 
-  deployed = await Splitter.deployed();
-  const { withdraw } = deployed;
+  let _deployed = await Splitter.deployed();
+  const { withdraw } = _deployed;
   let transParamObj = { from: withdrawer.val(), gas: gas };
 
-  try {
-    await withdraw.call(transParamObj);
-    okToSend = true;
-  } catch (err) {
+  const okToSend = await withdraw.call(transParamObj).catch((err) => {
     $("#status").html("The Withdraw transaction will fail. Please check your account balance/ split amount.");
     flashRedError("status", 3);
     flashRedError("withdrawHeader", 3);
-    throw new Error("The withdraw transaction will fail anyway, not sending");
+    return;
+  });
+
+  if (okToSend) {
+    let txReceipt = await withdraw
+      .sendTransaction(transParamObj)
+      .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
+
+    updateUI(txReceipt);
   }
 
-  let txReceipt = await withdraw
-    .sendTransaction(transParamObj)
-    .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
-
   withdrawer.val("");
-  updateUI(txReceipt);
 };
 
 const showBalance = async function (wallet) {
@@ -135,16 +134,18 @@ const showBalance = async function (wallet) {
 
   return web3.eth
     .getBalance(wallet.address)
-    .then((balaceInWei) => {
-      document.getElementById(`address${wallet.i}Balance`).innerHTML = web3.utils.fromWei(balaceInWei, "ether");
+    .then((balanceInWei) => {
+      document.getElementById(`address${wallet.i}Balance`).innerHTML = web3.utils.fromWei(balanceInWei, "ether");
     })
     .catch(console.error);
 };
 
 const showDappBalance = async function (wallet) {
-  deployed = await Splitter.deployed();
-  let { accountBalances } = deployed;
+  let _deployed = await Splitter.deployed();
+  let { accountBalances } = _deployed;
+
   let dappBalanceElement = document.getElementById(`address${wallet.i}DappBalance`);
+
   return accountBalances
     .call(wallet.address)
     .then((dappBalance) => {
@@ -155,18 +156,13 @@ const showDappBalance = async function (wallet) {
 };
 
 const showContractBalance = async function () {
-  let deployed;
   Splitter.deployed()
-    .then((instance) => {
-      deployed = instance;
-      return deployed;
-    })
+    .then((instance) => instance)
     .then((contract) => {
-      let cc = contract.address;
-      return web3.eth.getBalance(cc);
+      let _contractAddress = contract.address;
+      return web3.eth.getBalance(_contractAddress);
     })
     .then((balance) => {
-      console.log("balance : ", balance);
       $("#contractBalance").html(web3.utils.fromWei(balance, "ether").toString(10));
     })
     .catch(console.error);
@@ -174,7 +170,6 @@ const showContractBalance = async function () {
 
 const updateUI = function (txObj) {
   const receipt = txObj.receipt;
-  console.log("got receipt", receipt);
   if (!receipt.status) {
     console.error("Wrong status");
     console.error(receipt);
@@ -184,7 +179,6 @@ const updateUI = function (txObj) {
     console.error(receipt);
     $("#status").html("There was an error in the tx execution, missing expected event");
   } else {
-    console.log(receipt.logs[0]);
     $("#status").html("Transfer executed");
   }
   showContractBalance();
@@ -196,8 +190,6 @@ const flashRedError = function (elementIdTag, seconds) {
   let $el = $(`#${elementIdTag}`);
   let x = seconds * 1000;
   let originalColor = $el.css("background");
-
-  console.log("$el", $el);
 
   $el.css("background", "#FF5733");
   setTimeout(function () {
@@ -216,13 +208,10 @@ window.addEventListener("load", function () {
       window.account = accounts[0];
       return accounts;
     })
-    .then((list) => {
+    .then((accountList) => {
       for (i = 0; i < 10; i++) {
-        let address = list[i];
-        let balance = 0;
-        let owed = 0;
-        let wallet = { i, address, balance, owed };
-        wallets.push(wallet);
+        let address = accountList[i];
+        wallets.push({ i, address });
       }
       wallets.slice(0, 5).map((w) => showBalance(w));
       wallets.slice(0, 5).map((w) => showDappBalance(w));
