@@ -1,6 +1,10 @@
 const Splitter = artifacts.require("Splitter");
-const BigNumber = require("bignumber.js");
 const truffleAssert = require("truffle-assertions");
+const chai = require("chai");
+const BN = require("bn.js");
+
+// Enable and inject BN dependency
+chai.use(require("chai-bn")(BN));
 
 contract("Splitter", (accounts) => {
   let splitter;
@@ -60,18 +64,18 @@ contract("Splitter", (accounts) => {
 
     const weiAfterWithdraw = await web3.eth.getBalance(receiver_2);
 
-    const bn_gasPrice = new BigNumber(_gasPrice);
-    const bn_gasAmount = new BigNumber(_gasAmount);
-    const gasCost = bn_gasPrice.times(bn_gasAmount);
+    const bn_gasPrice = new BN(_gasPrice);
+    const bn_gasAmount = new BN(_gasAmount);
+    const gasCost = bn_gasPrice.mul(bn_gasAmount);
 
-    const owed = new BigNumber(_owedAmount);
-    const beforeBalance = new BigNumber(weiBeforeWithdraw);
-    const afterBalance = new BigNumber(weiAfterWithdraw);
+    const owed = new BN(_owedAmount);
+    const beforeBalance = new BN(weiBeforeWithdraw);
+    const afterBalance = new BN(weiAfterWithdraw);
 
-    const expectedAfterBalance = beforeBalance.plus(owed).minus(gasCost);
+    const expectedAfterBalance = beforeBalance.add(owed).sub(gasCost);
 
-    //Use BigNumber methods
-    assert.isTrue(afterBalance.isEqualTo(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
+    //Use chai-bn
+    assert.isTrue(afterBalance.eq(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
 
     //Direct comparision
     assert.strictEqual(expectedAfterBalance.toString(10), afterBalance.toString(10), "withdrawer didn't get exact owed amount");

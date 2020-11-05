@@ -1,6 +1,10 @@
 const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
-const BigNumber = require("bignumber.js");
+const chai = require("chai");
+const BN = require("bn.js");
+
+// Enable and inject BN dependency
+chai.use(require("chai-bn")(BN));
 
 contract("Splitter", (accounts) => {
   before(async () => {
@@ -124,9 +128,10 @@ contract("Splitter", (accounts) => {
         return splitter.accountBalances.call(receiver_1);
       })
       .then((receiver1Balance) => {
-        const expected = new BigNumber(splitCount * _splitAmount);
-        const actual = new BigNumber(receiver1Balance);
-        assert.isTrue(actual.isEqualTo(expected), "First receiver has expected owed balance");
+        const expected = new BN(splitCount * _splitAmount);
+        const actual = new BN(receiver1Balance);
+
+        assert.isTrue(actual.eq(expected), "First receiver has expected owed balance");
         assert.strictEqual(actual.toString(10), expected.toString(10), "First receiver did not get owed split values");
       });
   });
