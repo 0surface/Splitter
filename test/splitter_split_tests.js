@@ -24,19 +24,16 @@ contract("Splitter", (accounts) => {
     assert.strictEqual(parseInt(balance), 0, "contract shouldn't have funds on deployment");
   });
 
-  it("split method emits event", (done) => {
+  it("split method emits event", () => {
     const _sentAmount = 21;
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
         value: _sentAmount,
       })
       .then((txObj) => {
-        assert.isTrue(
-          typeof txObj.events.LogSplitSuccessful.returnValues !== "undefined",
-          "LogSplitSuccessful event was not emmited"
-        );
+        assert.isDefined(txObj.events.LogSplitSuccessful.returnValues, "LogSplitSuccessful event was not emmited");
         return txObj.events.LogSplitSuccessful.returnValues;
       })
       .then((eventValues) => {
@@ -44,9 +41,7 @@ contract("Splitter", (accounts) => {
         assert.strictEqual(eventValues.receiver1, receiver_1, "receiver_1 is not same");
         assert.strictEqual(eventValues.receiver2, receiver_2, "receiver_2 is not same");
         assert.strictEqual(eventValues.sentAmount, _sentAmount.toString(), "Sent Amount is not equal to expected");
-        done();
-      })
-      .catch(done);
+      });
   });
 
   it("contract address has the sent amount value", () => {
@@ -88,7 +83,7 @@ contract("Splitter", (accounts) => {
         return splitter.accountBalances.call(fundSender);
       })
       .then((fundSenderBalance) => {
-        assert.equal(fundSenderBalance.toString(10), 0, "fund sender is assigned a value");
+        assert.equal(fundSenderBalance.toString(10), 0, "fund sender is incorrectly assigned a value");
       });
   });
 
@@ -129,7 +124,4 @@ contract("Splitter", (accounts) => {
       "Invalid minimum amount"
     );
   });
-
-  //TODO:
-  //it("reverts on overflow math calcuations", () => {});
 });

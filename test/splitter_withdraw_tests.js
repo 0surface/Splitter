@@ -14,8 +14,6 @@ contract("Splitter", (accounts) => {
     it("TestRPC must have adequate number of addresses", () => {
       assert.isTrue(accounts.length >= 5, "Test has enough addresses");
     });
-
-    splitter = await artifacts.require("Splitter.sol").new();
   });
 
   beforeEach("deploy a fresh contract ", async () => {
@@ -24,23 +22,25 @@ contract("Splitter", (accounts) => {
   });
 
   it("should emit event on successful withdrawal", () => {
-    let _fundBeforeWithdrawal = 0;
-
+    const _amountSent = 20;
+    const _amountToWithdraw = 10;
     return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
-        value: 20,
+        value: _amountSent,
       })
-      .then(() => {
-        return splitter.accountBalances.call(receiver_1);
-      })
-      .then((receiver1Balance) => {
-        _fundBeforeWithdrawal = receiver1Balance;
+      .then((splitTxObj) => {
+        assert.isDefined(splitTxObj.events.LogSplitSuccessful, "Split failed prior to withdraw");
         return splitter.contract.methods.withdraw().send({ from: receiver_1 });
       })
-      .then((txObj) => {
-        assert.isTrue(typeof txObj.events.LogFundWithdrawn !== "undefined", "LogFundWithdrawn event was not emmited");
+      .then((withdrawTxObj) => {
+        assert.isDefined(withdrawTxObj.events.LogFundWithdrawn, "Withdraw function failed");
+        return withdrawTxObj.events.LogFundWithdrawn.returnValues;
+      })
+      .then((eventValues) => {
+        assert.strictEqual(eventValues.withdrawer, receiver_1, "withdrawer address is not equal to expectede");
+        assert.strictEqual(eventValues.withdrawn, _amountToWithdraw.toString(), "Withdrawn amount is not equal to expected");
       });
   });
 
@@ -78,20 +78,16 @@ contract("Splitter", (accounts) => {
   });
 
   it("should withdraw exact amount assigned in storage", async () => {
-    //split
     await splitter.contract.methods.split(receiver_1, receiver_2).send({
       from: fundSender,
       value: 20,
     });
 
-    //fetch before withdrawal
-    let _fundBeforeWithdrawal = await splitter.accountBalances.call(receiver_1);
+    const _fundBeforeWithdrawal = await splitter.accountBalances.call(receiver_1);
 
-    //withdraw
-    let txObj = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
+    const txObj = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
 
-    //fetch logged withdrawn
-    let { withdrawn } = txObj.events.LogFundWithdrawn.returnValues;
+    const { withdrawn } = txObj.events.LogFundWithdrawn.returnValues;
 
     assert.strictEqual(_fundBeforeWithdrawal.toString(10), withdrawn, "withdrawn is not equal to amount before Withdrawal");
   });
