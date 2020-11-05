@@ -2,13 +2,13 @@
 pragma solidity 0.5.16;
 
 import "./SafeMath.sol";
-import "./Owned.sol";
+import "./Pausable.sol";
 
 /*
 @title Splitter
 @dev split balance of sender into two & make funds available for withdrawal
 */
-contract Splitter is Owned {
+contract Splitter is Pausable {
     using SafeMath for uint;
 
     mapping(address => uint256) public accountBalances;
@@ -26,7 +26,7 @@ contract Splitter is Owned {
     /*
      @dev split funds and record in storage
      */
-    function split(address _receiver1, address _receiver2) public payable {
+    function split(address _receiver1, address _receiver2) public whenNotPaused payable {
         require(
             _receiver1 != address(0) && _receiver2 != address(0),
             "Can't split money to null address"
@@ -46,7 +46,7 @@ contract Splitter is Owned {
     /*
     @dev Allow fund receiver to withdraw
     */
-    function withdraw() public {
+    function withdraw() whenNotPaused public {
         uint256 withdrawerBalance = accountBalances[msg.sender];
         require(withdrawerBalance > 0, "No funds to withdraw");
 

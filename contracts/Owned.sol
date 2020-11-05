@@ -9,7 +9,7 @@ contract Owned {
 
     event LogOwnerChanged(address indexed oldOwner, address indexed newOwner);
 
-    modifier isOwner() {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Caller is not owner");
         _;
     }
@@ -26,7 +26,7 @@ contract Owned {
      * @dev Change owner
      * @param newOwner address of new owner
      */
-    function changeOwner(address newOwner) public isOwner {     
+    function changeOwner(address newOwner) public onlyOwner {     
         require(newOwner != address(0), "Can't assign ownership to null address");
         owner = newOwner;
         emit LogOwnerChanged(owner, newOwner);
