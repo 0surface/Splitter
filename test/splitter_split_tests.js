@@ -1,5 +1,6 @@
 const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
+const BigNumber = require("bignumber.js");
 
 contract("Splitter", (accounts) => {
   before(async () => {
@@ -102,6 +103,31 @@ contract("Splitter", (accounts) => {
       .then((fundSenderBalance) => {
         const assignedValue = fundSenderBalance.toString(10);
         assert.equal(assignedValue, 1, "fundSender not assigned 1 wei");
+      });
+  });
+
+  it("Recipient get owed amount compounded on multiple splits", () => {
+    const _sentAmount = 20;
+    const _splitAmount = 10;
+    const splitCount = 3;
+
+    return splitter.contract.methods
+      .split(receiver_1, receiver_2)
+      .send({ from: fundSender, value: _sentAmount })
+      .then(() => {
+        return splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
+      })
+      .then(() => {
+        return splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
+      })
+      .then(() => {
+        return splitter.accountBalances.call(receiver_1);
+      })
+      .then((receiver1Balance) => {
+        const expected = new BigNumber(splitCount * _splitAmount);
+        const actual = new BigNumber(receiver1Balance);
+        assert.isTrue(actual.isEqualTo(expected), "First receiver has expected owed balance");
+        assert.strictEqual(actual.toString(10), expected.toString(10), "First receiver did not get owed split values");
       });
   });
 
