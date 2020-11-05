@@ -1,10 +1,11 @@
 const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
 const chai = require("chai");
-const BN = require("bn.js");
+const { BN } = web3.utils.BN;
 
 // Enable and inject BN dependency
 chai.use(require("chai-bn")(BN));
+const { assert } = chai;
 
 contract("Splitter", (accounts) => {
   let splitter;
@@ -74,11 +75,7 @@ contract("Splitter", (accounts) => {
 
     const expectedAfterBalance = beforeBalance.add(owed).sub(gasCost);
 
-    //Use chai-bn
-    assert.isTrue(afterBalance.eq(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
-
-    //Direct comparision
-    assert.strictEqual(expectedAfterBalance.toString(10), afterBalance.toString(10), "withdrawer didn't get exact owed amount");
+    chai.expect(afterBalance).to.be.a.bignumber.that.equals(expectedAfterBalance);
   });
 
   it("should withdraw exact amount assigned in storage", async () => {
