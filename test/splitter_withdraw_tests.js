@@ -122,7 +122,8 @@ contract("Splitter", (accounts) => {
     return splitter.contract.methods
       .pause()
       .send({ from: deployer })
-      .then(() => {
+      .then((txObj) => {
+        assert.isDefined(txObj.events.LogContractPaused, "pause call did not get mined");
         return splitter.paused.call();
       })
       .then((paused) => {
