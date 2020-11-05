@@ -1,6 +1,10 @@
 const Splitter = artifacts.require("Splitter");
-const BigNumber = require("bignumber.js");
 const truffleAssert = require("truffle-assertions");
+const chai = require("chai");
+const BN = require("bn.js");
+
+// Enable and inject BN dependency
+chai.use(require("chai-bn")(BN));
 
 contract("Splitter", (accounts) => {
   let splitter;
@@ -14,8 +18,6 @@ contract("Splitter", (accounts) => {
     it("TestRPC must have adequate number of addresses", () => {
       assert.isTrue(accounts.length >= 5, "Test has enough addresses");
     });
-
-    splitter = await artifacts.require("Splitter.sol").new();
   });
 
   beforeEach("deploy a fresh contract ", async () => {
@@ -23,27 +25,27 @@ contract("Splitter", (accounts) => {
     assert.equal(await web3.eth.getBalance(splitter.address), 0, "contract has no funds on deployment");
   });
 
-  it("should emit event on successful withdrawal", (done) => {
-    let _fundBeforeWithdrawal = 0;
-
-    splitter.contract.methods
+  it("should emit event on successful withdrawal", () => {
+    const _amountSent = 20;
+    const _amountToWithdraw = 10;
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
-        value: 20,
+        value: _amountSent,
       })
-      .then(() => {
-        return splitter.accountBalances.call(receiver_1);
-      })
-      .then((receiver1Balance) => {
-        _fundBeforeWithdrawal = receiver1Balance;
+      .then((splitTxObj) => {
+        assert.isDefined(splitTxObj.events.LogSplitSuccessful, "Split failed prior to withdraw");
         return splitter.contract.methods.withdraw().send({ from: receiver_1 });
       })
-      .then((txObj) => {
-        assert.isTrue(typeof txObj.events.LogFundWithdrawn !== "undefined", "LogFundWithdrawn event was not emmited");
-        done();
+      .then((withdrawTxObj) => {
+        assert.isDefined(withdrawTxObj.events.LogFundWithdrawn, "Withdraw function failed");
+        return withdrawTxObj.events.LogFundWithdrawn.returnValues;
       })
-      .catch(done);
+      .then((eventValues) => {
+        assert.strictEqual(eventValues.withdrawer, receiver_1, "withdrawer address is not equal to expectede");
+        assert.strictEqual(eventValues.withdrawn, _amountToWithdraw.toString(), "Withdrawn amount is not equal to expected");
+      });
   });
 
   it("withdrawer should get their allocated money", async () => {
@@ -54,46 +56,42 @@ contract("Splitter", (accounts) => {
 
     await splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
 
-    const _gasPrice = await web3.eth.getGasPrice();
-
     const withdrawTxObj = await splitter.contract.methods.withdraw().send({ from: receiver_2 });
-
     const _gasAmount = withdrawTxObj.gasUsed;
+
+    const withdrawTx = await web3.eth.getTransaction(withdrawTxObj.transactionHash);
+    const _gasPrice = withdrawTx.gasPrice;
 
     const weiAfterWithdraw = await web3.eth.getBalance(receiver_2);
 
-    const bn_gasPrice = new BigNumber(_gasPrice);
-    const bn_gasAmount = new BigNumber(_gasAmount);
-    const gasCost = bn_gasPrice.times(bn_gasAmount);
+    const bn_gasPrice = new BN(_gasPrice);
+    const bn_gasAmount = new BN(_gasAmount);
+    const gasCost = bn_gasPrice.mul(bn_gasAmount);
 
-    const owed = new BigNumber(_owedAmount);
-    const beforeBalance = new BigNumber(weiBeforeWithdraw);
-    const afterBalance = new BigNumber(weiAfterWithdraw);
+    const owed = new BN(_owedAmount);
+    const beforeBalance = new BN(weiBeforeWithdraw);
+    const afterBalance = new BN(weiAfterWithdraw);
 
-    const expectedAfterBalance = beforeBalance.plus(owed).minus(gasCost);
+    const expectedAfterBalance = beforeBalance.add(owed).sub(gasCost);
 
-    //Use BigNumber methods
-    assert.isTrue(afterBalance.isEqualTo(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
+    //Use chai-bn
+    assert.isTrue(afterBalance.eq(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
 
     //Direct comparision
     assert.strictEqual(expectedAfterBalance.toString(10), afterBalance.toString(10), "withdrawer didn't get exact owed amount");
   });
 
   it("should withdraw exact amount assigned in storage", async () => {
-    //split
     await splitter.contract.methods.split(receiver_1, receiver_2).send({
       from: fundSender,
       value: 20,
     });
 
-    //fetch before withdrawal
-    let _fundBeforeWithdrawal = await splitter.accountBalances.call(receiver_1);
+    const _fundBeforeWithdrawal = await splitter.accountBalances.call(receiver_1);
 
-    //withdraw
-    let txObj = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
+    const txObj = await splitter.contract.methods.withdraw().send({ from: receiver_1 });
 
-    //fetch logged withdrawn
-    let { withdrawn } = txObj.events.LogFundWithdrawn.returnValues;
+    const { withdrawn } = txObj.events.LogFundWithdrawn.returnValues;
 
     assert.strictEqual(_fundBeforeWithdrawal.toString(10), withdrawn, "withdrawn is not equal to amount before Withdrawal");
   });
@@ -107,8 +105,8 @@ contract("Splitter", (accounts) => {
     await truffleAssert.reverts(splitter.contract.methods.withdraw().send({ from: randomAddress }), "No funds to withdraw");
   });
 
-  it("should reset receiver's assigned funds back to zero on withdrawal", (done) => {
-    splitter.contract.methods
+  it("should reset receiver's assigned funds back to zero on withdrawal", () => {
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -120,8 +118,6 @@ contract("Splitter", (accounts) => {
       })
       .then((receiver1Balance) => {
         assert.equal(receiver1Balance.toString(10), 0, "receiver balance record is NOT set to zero after withdrwal");
-        done();
-      })
-      .catch(done);
+      });
   });
 });

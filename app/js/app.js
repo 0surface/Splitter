@@ -5,7 +5,6 @@ const $ = require("jquery");
 const splitterJson = require("../../build/contracts/Splitter.json");
 require("file-loader?name=../index.html!../index.html");
 
-let accounts = [];
 let wallets = [];
 
 if (typeof web3 !== "undefined") {
@@ -21,18 +20,48 @@ const Splitter = truffleContract(splitterJson);
 Splitter.setProvider(web3.currentProvider);
 
 const split = async function () {
+  validateSplit();
+
   const gas = 2000000;
-  let deployed;
-
-  $("#senderHelp").html("");
-  $("#receiver1Help").html("");
-  $("#receiver2Help").html("");
-  $("#amountHelp").html("");
-
   const sender = $("input[id='sender']");
   const _receiver1 = $("input[id='receiver1']");
   const _receiver2 = $("input[id='receiver2']");
   const amount = $("input[id='amount']");
+
+  const deployed = await Splitter.deployed();
+  const { split } = deployed;
+
+  const tranParamsObj = {
+    from: sender.val(),
+    value: web3.utils.toWei(amount.val(), "ether"),
+    gas: gas,
+  };
+
+  try {
+    await split.call(_receiver1.val(), _receiver2.val(), tranParamsObj);
+  } catch (err) {
+    $("#status").html("The split transaction will fail. Please check your account balance/ split amount.");
+    flashRedError("status", 3);
+    flashRedError("splitHeader", 3);
+    throw new Error("The split transaction will fail anyway, not sending");
+  }
+
+  const txObj = await split
+    .sendTransaction(_receiver1.val(), _receiver2.val(), tranParamsObj)
+    .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
+
+  sender.val("");
+  _receiver1.val("");
+  _receiver2.val("");
+  amount.val("");
+  updateUI(txObj);
+};
+
+const validateSplit = async function () {
+  $("#senderHelp").html("");
+  $("#receiver1Help").html("");
+  $("#receiver2Help").html("");
+  $("#amountHelp").html("");
 
   let hasValidationError = false;
 
@@ -57,34 +86,6 @@ const split = async function () {
   if (hasValidationError) {
     return;
   }
-
-  deployed = await Splitter.deployed();
-  const { split } = deployed;
-
-  let tranParamsObj = {
-    from: sender.val(),
-    value: web3.utils.toWei(amount.val(), "ether"),
-    gas: gas,
-  };
-
-  try {
-    await split.call(_receiver1.val(), _receiver2.val(), tranParamsObj);
-  } catch (err) {
-    $("#status").html("The split transaction will fail. Please check your account balance/ split amount.");
-    flashRedError("status", 3);
-    flashRedError("splitHeader", 3);
-    throw new Error("The split transaction will fail anyway, not sending");
-  }
-
-  let txObj = await split
-    .sendTransaction(_receiver1.val(), _receiver2.val(), tranParamsObj)
-    .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
-
-  sender.val("");
-  _receiver1.val("");
-  _receiver2.val("");
-  amount.val("");
-  updateUI(txObj);
 };
 
 const withdraw = async function () {
@@ -97,25 +98,25 @@ const withdraw = async function () {
     return;
   }
 
-  let balanceInWei = await web3.eth.getBalance(withdrawer.val());
+  const balanceInWei = await web3.eth.getBalance(withdrawer.val());
   if (balanceInWei < gas) {
     window.alert("You don't have sufficient funds in your balance");
     return;
   }
 
-  let _deployed = await Splitter.deployed();
+  const _deployed = await Splitter.deployed();
   const { withdraw } = _deployed;
-  let transParamObj = { from: withdrawer.val(), gas: gas };
+  const transParamObj = { from: withdrawer.val(), gas: gas };
 
   const okToSend = await withdraw.call(transParamObj).catch((err) => {
     $("#status").html("The Withdraw transaction will fail. Please check your account balance/ split amount.");
     flashRedError("status", 3);
     flashRedError("withdrawHeader", 3);
-    return;
+    return false;
   });
 
   if (okToSend) {
-    let txReceipt = await withdraw
+    const txReceipt = await withdraw
       .sendTransaction(transParamObj)
       .on("transactionHash", (txHash) => $("#status").html("Transaction on the way " + txHash));
 
@@ -141,26 +142,23 @@ const showBalance = async function (wallet) {
 };
 
 const showDappBalance = async function (wallet) {
-  let _deployed = await Splitter.deployed();
-  let { accountBalances } = _deployed;
+  const _deployed = await Splitter.deployed();
+  const { accountBalances } = _deployed;
 
-  let dappBalanceElement = document.getElementById(`address${wallet.i}DappBalance`);
+  const dappBalanceElement = document.getElementById(`address${wallet.i}DappBalance`);
 
   return accountBalances
     .call(wallet.address)
     .then((dappBalance) => {
-      let etherBalance = web3.utils.fromWei(dappBalance, "ether");
-      dappBalanceElement.innerHTML = etherBalance;
+      dappBalanceElement.innerHTML = web3.utils.fromWei(dappBalance, "ether");
     })
     .catch(console.error);
 };
 
 const showContractBalance = async function () {
   Splitter.deployed()
-    .then((instance) => instance)
     .then((contract) => {
-      let _contractAddress = contract.address;
-      return web3.eth.getBalance(_contractAddress);
+      return web3.eth.getBalance(contract.address);
     })
     .then((balance) => {
       $("#contractBalance").html(web3.utils.fromWei(balance, "ether").toString(10));
@@ -169,32 +167,32 @@ const showContractBalance = async function () {
 };
 
 const updateUI = function (txObj) {
-  const receipt = txObj.receipt;
-  if (!receipt.status) {
+  if (!txObj.receipt.status) {
     console.error("Wrong status");
-    console.error(receipt);
+    console.error(txObj.receipt);
     $("#status").html("There was an error in the tx execution, status not 1");
-  } else if (receipt.logs.length == 0) {
+  } else if (txObj.receipt.logs.length == 0) {
     console.error("Empty logs");
-    console.error(receipt);
+    console.error(txObj.receipt);
     $("#status").html("There was an error in the tx execution, missing expected event");
   } else {
     $("#status").html("Transfer executed");
   }
   showContractBalance();
-  wallets.slice(0, 5).map((w) => showBalance(w));
-  wallets.slice(0, 5).map((w) => showDappBalance(w));
+  wallets.slice(0, 5).map((w) => {
+    showBalance(w);
+    showDappBalance(w);
+  });
 };
 
 const flashRedError = function (elementIdTag, seconds) {
-  let $el = $(`#${elementIdTag}`);
-  let x = seconds * 1000;
-  let originalColor = $el.css("background");
+  const $el = $(`#${elementIdTag}`);
+  const originalColor = $el.css("background");
 
   $el.css("background", "#FF5733");
   setTimeout(function () {
     $el.css("background", originalColor);
-  }, x);
+  }, seconds * 1000);
 };
 
 window.addEventListener("load", function () {
@@ -202,9 +200,8 @@ window.addEventListener("load", function () {
     .getAccounts()
     .then((accounts) => {
       if (accounts.length == 0) {
-        throw new Error("No account with which to transact");
+        throw new Error("No accounts with which to transact");
       }
-      this.accounts = accounts;
       window.account = accounts[0];
       return accounts;
     })
@@ -213,8 +210,10 @@ window.addEventListener("load", function () {
         let address = accountList[i];
         wallets.push({ i, address });
       }
-      wallets.slice(0, 5).map((w) => showBalance(w));
-      wallets.slice(0, 5).map((w) => showDappBalance(w));
+      wallets.slice(0, 5).map((w) => {
+        showBalance(w);
+        showDappBalance(w);
+      });
     })
     .catch(console.error);
 

@@ -1,5 +1,10 @@
 const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
+const chai = require("chai");
+const BN = require("bn.js");
+
+// Enable and inject BN dependency
+chai.use(require("chai-bn")(BN));
 
 contract("Splitter", (accounts) => {
   before(async () => {
@@ -24,19 +29,16 @@ contract("Splitter", (accounts) => {
     assert.strictEqual(parseInt(balance), 0, "contract shouldn't have funds on deployment");
   });
 
-  it("split method emits event", (done) => {
+  it("split method emits event", () => {
     const _sentAmount = 21;
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
         value: _sentAmount,
       })
       .then((txObj) => {
-        assert.isTrue(
-          typeof txObj.events.LogSplitSuccessful.returnValues !== "undefined",
-          "LogSplitSuccessful event was not emmited"
-        );
+        assert.isDefined(txObj.events.LogSplitSuccessful.returnValues, "LogSplitSuccessful event was not emmited");
         return txObj.events.LogSplitSuccessful.returnValues;
       })
       .then((eventValues) => {
@@ -44,14 +46,12 @@ contract("Splitter", (accounts) => {
         assert.strictEqual(eventValues.receiver1, receiver_1, "receiver_1 is not same");
         assert.strictEqual(eventValues.receiver2, receiver_2, "receiver_2 is not same");
         assert.strictEqual(eventValues.sentAmount, _sentAmount.toString(), "Sent Amount is not equal to expected");
-        done();
-      })
-      .catch(done);
+      });
   });
 
-  it("contract address has the sent amount value", (done) => {
+  it("contract address has the sent amount value", () => {
     const _sentAmount = 20;
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -63,16 +63,14 @@ contract("Splitter", (accounts) => {
       })
       .then((splitterBalance) => {
         assert.equal(splitterBalance, _sentAmount, "contract balance doesn't have sent value");
-        done();
-      })
-      .catch(done);
+      });
   });
 
-  it("splits even number sent value exactly into two", (done) => {
+  it("splits even number sent value exactly into two", () => {
     const _sentAmount = 20;
     const _splitAmount = 10;
 
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -90,16 +88,14 @@ contract("Splitter", (accounts) => {
         return splitter.accountBalances.call(fundSender);
       })
       .then((fundSenderBalance) => {
-        assert.equal(fundSenderBalance.toString(10), 0, "fund sender is assigned a value");
-        done();
-      })
-      .catch(done);
+        assert.equal(fundSenderBalance.toString(10), 0, "fund sender is incorrectly assigned a value");
+      });
   });
 
-  it("Assigns 1 wei back to sender when sent odd value", (done) => {
+  it("Assigns 1 wei back to sender when sent odd value", () => {
     const _sentAmount = 21;
 
-    splitter.contract.methods
+    return splitter.contract.methods
       .split(receiver_1, receiver_2)
       .send({
         from: fundSender,
@@ -111,9 +107,33 @@ contract("Splitter", (accounts) => {
       .then((fundSenderBalance) => {
         const assignedValue = fundSenderBalance.toString(10);
         assert.equal(assignedValue, 1, "fundSender not assigned 1 wei");
-        done();
+      });
+  });
+
+  it("Recipient get owed amount compounded on multiple splits", () => {
+    const _sentAmount = 20;
+    const _splitAmount = 10;
+    const splitCount = 3;
+
+    return splitter.contract.methods
+      .split(receiver_1, receiver_2)
+      .send({ from: fundSender, value: _sentAmount })
+      .then(() => {
+        return splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
       })
-      .catch(done);
+      .then(() => {
+        return splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
+      })
+      .then(() => {
+        return splitter.accountBalances.call(receiver_1);
+      })
+      .then((receiver1Balance) => {
+        const expected = new BN(splitCount * _splitAmount);
+        const actual = new BN(receiver1Balance);
+
+        assert.isTrue(actual.eq(expected), "First receiver has expected owed balance");
+        assert.strictEqual(actual.toString(10), expected.toString(10), "First receiver did not get owed split values");
+      });
   });
 
   it("reverts when a receiver null address", async () => {
@@ -135,7 +155,4 @@ contract("Splitter", (accounts) => {
       "Invalid minimum amount"
     );
   });
-
-  //TODO:
-  //it("reverts on overflow math calcuations", () => {});
 });
