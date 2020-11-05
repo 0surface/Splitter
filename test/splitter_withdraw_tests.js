@@ -52,11 +52,11 @@ contract("Splitter", (accounts) => {
 
     await splitter.contract.methods.split(receiver_1, receiver_2).send({ from: fundSender, value: _sentAmount });
 
-    const _gasPrice = await web3.eth.getGasPrice();
-
     const withdrawTxObj = await splitter.contract.methods.withdraw().send({ from: receiver_2 });
-
     const _gasAmount = withdrawTxObj.gasUsed;
+
+    const withdrawTx = await web3.eth.getTransaction(withdrawTxObj.transactionHash);
+    const _gasPrice = withdrawTx.gasPrice;
 
     const weiAfterWithdraw = await web3.eth.getBalance(receiver_2);
 
