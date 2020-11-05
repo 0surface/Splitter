@@ -117,4 +117,19 @@ contract("Splitter", (accounts) => {
         assert.equal(receiver1Balance.toString(10), 0, "receiver balance record is NOT set to zero after withdrwal");
       });
   });
+
+  it("should revert withdraw method call while contract is paused", async () => {
+    return splitter.contract.methods
+      .pause()
+      .send({ from: deployer })
+      .then(() => {
+        return splitter.paused.call();
+      })
+      .then((paused) => {
+        assert.isTrue(paused, "contract failed to pause");
+      })
+      .then(() => {
+        truffleAssert.reverts(splitter.contract.methods.withdraw().send({ from: receiver_1 }), "Contract is paused");
+      });
+  });
 });

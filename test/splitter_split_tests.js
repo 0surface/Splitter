@@ -30,6 +30,27 @@ contract("Splitter", (accounts) => {
     assert.strictEqual(parseInt(balance), 0, "contract shouldn't have funds on deployment");
   });
 
+  it("should revert split method call while contract is paused", async () => {
+    return splitter.contract.methods
+      .pause()
+      .send({ from: deployer })
+      .then(() => {
+        return splitter.paused.call();
+      })
+      .then((paused) => {
+        assert.isTrue(paused, "contract failed to pause");
+      })
+      .then(() => {
+        truffleAssert.reverts(
+          splitter.contract.methods.split(receiver_1, receiver_2).send({
+            from: fundSender,
+            value: 21,
+          }),
+          "Contract is paused"
+        );
+      });
+  });
+
   it("split method emits event", () => {
     const _sentAmount = 21;
     return splitter.contract.methods
