@@ -6,3 +6,4 @@ build/contracts/SafeMath.json
 build/contracts/Owned.json
 build/app/index.html
 build/app/js/app.js
+build/contracts/Pausable.json

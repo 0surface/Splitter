@@ -1,10 +1,11 @@
 const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
 const chai = require("chai");
-const BN = require("bn.js");
+const { BN } = web3.utils.BN;
 
 // Enable and inject BN dependency
 chai.use(require("chai-bn")(BN));
+const { assert, expect } = chai;
 
 contract("Splitter", (accounts) => {
   before(async () => {
@@ -27,6 +28,28 @@ contract("Splitter", (accounts) => {
   it("contract should have no funds on deployment", async () => {
     const balance = await web3.eth.getBalance(splitter.address);
     assert.strictEqual(parseInt(balance), 0, "contract shouldn't have funds on deployment");
+  });
+
+  it("should revert split method call while contract is paused", async () => {
+    return splitter.contract.methods
+      .pause()
+      .send({ from: deployer })
+      .then((txObj) => {
+        assert.isDefined(txObj.events.LogContractPaused, "pause call did not get mined");
+        return splitter.paused.call();
+      })
+      .then((paused) => {
+        assert.isTrue(paused, "contract failed to pause");
+      })
+      .then(() => {
+        truffleAssert.reverts(
+          splitter.contract.methods.split(receiver_1, receiver_2).send({
+            from: fundSender,
+            value: 21,
+          }),
+          "Contract is paused"
+        );
+      });
   });
 
   it("split method emits event", () => {
@@ -130,9 +153,7 @@ contract("Splitter", (accounts) => {
       .then((receiver1Balance) => {
         const expected = new BN(splitCount * _splitAmount);
         const actual = new BN(receiver1Balance);
-
-        assert.isTrue(actual.eq(expected), "First receiver has expected owed balance");
-        assert.strictEqual(actual.toString(10), expected.toString(10), "First receiver did not get owed split values");
+        expect(actual).to.be.a.bignumber.that.equals(expected);
       });
   });
 

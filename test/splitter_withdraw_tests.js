@@ -1,10 +1,11 @@
 const Splitter = artifacts.require("Splitter");
 const truffleAssert = require("truffle-assertions");
 const chai = require("chai");
-const BN = require("bn.js");
+const { BN } = web3.utils.BN;
 
 // Enable and inject BN dependency
 chai.use(require("chai-bn")(BN));
+const { assert, expect } = chai;
 
 contract("Splitter", (accounts) => {
   let splitter;
@@ -74,11 +75,7 @@ contract("Splitter", (accounts) => {
 
     const expectedAfterBalance = beforeBalance.add(owed).sub(gasCost);
 
-    //Use chai-bn
-    assert.isTrue(afterBalance.eq(expectedAfterBalance), "withdrawer didn't get their exact owed amount");
-
-    //Direct comparision
-    assert.strictEqual(expectedAfterBalance.toString(10), afterBalance.toString(10), "withdrawer didn't get exact owed amount");
+    expect(afterBalance).to.be.a.bignumber.that.equals(expectedAfterBalance);
   });
 
   it("should withdraw exact amount assigned in storage", async () => {
@@ -118,6 +115,22 @@ contract("Splitter", (accounts) => {
       })
       .then((receiver1Balance) => {
         assert.equal(receiver1Balance.toString(10), 0, "receiver balance record is NOT set to zero after withdrwal");
+      });
+  });
+
+  it("should revert withdraw method call while contract is paused", async () => {
+    return splitter.contract.methods
+      .pause()
+      .send({ from: deployer })
+      .then((txObj) => {
+        assert.isDefined(txObj.events.LogContractPaused, "pause call did not get mined");
+        return splitter.paused.call();
+      })
+      .then((paused) => {
+        assert.isTrue(paused, "contract failed to pause");
+      })
+      .then(() => {
+        truffleAssert.reverts(splitter.contract.methods.withdraw().send({ from: receiver_1 }), "Contract is paused");
       });
   });
 });
